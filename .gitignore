@@ -1,0 +1,5 @@
+venv/
+Games/
+dist/
+build/
+main.spec

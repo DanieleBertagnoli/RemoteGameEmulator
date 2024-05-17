@@ -1,0 +1,11 @@
+current_os: linux
+game_file_extensions:
+- gba
+- nds
+- iso
+games_folder: /home/pi/Documents/RemoteGames
+server_configs:
+  server_ip: 
+  server_password: 
+  server_port: 
+  server_username: 
