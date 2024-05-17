@@ -198,7 +198,7 @@ def menu() -> None:
     
     # Check if server configs are missing and prompt the user to set them up
     for key in server_configs:
-        if server_configs[key] == '':
+        if not server_configs[key]:
             print('\nOps... It seems that some server configs are missing. Let\'s set them up!\n')
             configure()
 
