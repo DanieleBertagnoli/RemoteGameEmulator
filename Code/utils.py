@@ -38,7 +38,7 @@ def list_games(remote=False, ssh=None, remote_folder=None):
                 print(f'- {i}: {game_title} ({game_type})')
                 id_to_game[i] = (game_type, game_title)
             
-            print(f'\n{len(id_to_game)} remote games found.')
+        print(f'\n{len(id_to_game)} remote games found.')
 
     else:
         
