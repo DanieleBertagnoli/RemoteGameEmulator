@@ -1,13 +1,12 @@
 import os
-import sys
-from stat import S_ISDIR
-
 import yaml
 import paramiko
+from tqdm import tqdm
 
 from utils import *
 
 CURRENT_DIR = find_base_dir()
+
 # Load configs
 CONFIGS_PATH = os.path.join(CURRENT_DIR, '..','configs.yml')
 with open(CONFIGS_PATH, 'r') as f:
@@ -24,7 +23,7 @@ def download_games() -> None:
     """
 
     # Ensure the Games folder exists locally
-    games_folder = os.path.join(CURRENT_DIR, '..','Games')
+    games_folder = os.path.join(CURRENT_DIR, '..', 'Games')
 
     # Setup SSH client
     ssh = paramiko.SSHClient()
@@ -44,7 +43,6 @@ def download_games() -> None:
     id_to_game = list_games(True, ssh, configs["games_folder"])
 
     while True:
-
         game_id = input('\n')
         if game_id == '':
             return
@@ -54,13 +52,11 @@ def download_games() -> None:
         else:
             not_valid_choice(game_id)
 
-    
     game_type, game_file = id_to_game[game_id]
     while True:
         response = input(f'\nDo you want to download {game_file} from {server_ip}:{server_port}? [Y/n]\n').upper()
-            
-        if response == 'Y' or response == '':
 
+        if response == 'Y' or response == '':
             remote_path = os.path.join(configs['games_folder'] + f'/{game_type}' + f'/{game_file}')
             local_path = os.path.join(games_folder, game_type, game_file)
 
@@ -76,7 +72,7 @@ def download_games() -> None:
             while True:
                 # Check which file is newer between local and remote ones
                 if remote_mtime > local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_file}, it seems that you files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
+                    response = input(f'You already have {game_file}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
                 elif remote_mtime < local_mtime and local_mtime > 0:
                     response = input(f'You already have {game_file} and they are more recent than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
                 else:
@@ -87,8 +83,18 @@ def download_games() -> None:
                         os.makedirs(os.path.dirname(local_path))
                         print(f'Created local directory {os.path.dirname(local_path)}')
 
-                    # Use SFTP to download the file
-                    sftp.get(remote_path, local_path)
+                    # Use SFTP to download the file with a progress bar
+                    with sftp.file(remote_path, 'rb') as remote_file:
+                        remote_file_size = remote_file_attr.st_size
+                        with open(local_path, 'wb') as local_file:
+                            with tqdm(total=remote_file_size, unit='B', unit_scale=True, desc=os.path.basename(remote_path)) as pbar:
+                                while True:
+                                    data = remote_file.read(32768)
+                                    if not data:
+                                        break
+                                    local_file.write(data)
+                                    pbar.update(len(data))
+
                     print(f'--- Downloaded {os.path.basename(remote_path)} ---')
                     break
 

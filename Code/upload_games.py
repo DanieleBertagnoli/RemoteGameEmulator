@@ -1,8 +1,7 @@
 import os
-import sys
-
 import paramiko
 import yaml
+from tqdm import tqdm
 
 from utils import *
 
@@ -17,7 +16,7 @@ configs = dict(configs)
 def upload_games() -> None:
 
     # Ensure the Games folder exists locally
-    games_folder = os.path.join(CURRENT_DIR, '..','Games')
+    games_folder = os.path.join(CURRENT_DIR, '..', 'Games')
     if not os.path.exists(games_folder):
         os.makedirs(games_folder)
 
@@ -51,7 +50,6 @@ def upload_games() -> None:
         else:
             not_valid_choice(game_id)
 
-    
     game_type, game_file = id_to_game[game_id]
 
     while True:
@@ -92,7 +90,15 @@ def upload_games() -> None:
                         sftp.mkdir(os.path.dirname(remote_path))
                         print(f'Created remote directory {os.path.dirname(remote_path)}')
 
-                    sftp.put(local_path, remote_path)
+                    # Use SFTP to upload the file with a progress bar
+                    with open(local_path, 'rb') as local_file:
+                        local_file_size = os.path.getsize(local_path)
+                        with tqdm(total=local_file_size, unit='B', unit_scale=True, desc=os.path.basename(local_path)) as pbar:
+                            def callback(bytes_transferred, bytes_total):
+                                pbar.update(bytes_transferred - pbar.n)
+
+                            sftp.put(local_path, remote_path, callback=callback)
+
                     print(f'--- Uploaded {os.path.basename(local_path)} to {remote_path} ---')
                     break
 
