@@ -5,7 +5,7 @@ import yaml
 def list_games(remote=False, ssh=None, remote_folder=None):
     
     CURRENT_DIR = find_base_dir()
-    CONFIGS_PATH = os.path.join(CURRENT_DIR, '..','configs.yml')
+    CONFIGS_PATH = os.path.join(CURRENT_DIR, '..', 'configs.yml')
     with open(CONFIGS_PATH, 'r') as f:
         configs = yaml.safe_load(f)
 
@@ -21,39 +21,58 @@ def list_games(remote=False, ssh=None, remote_folder=None):
             print('--- Error while listing remote files, no ssh or no remote_folder given! ---')
             return None
 
-        # Use SSH to list files in the remote games_folder
-        stdin, stdout, stderr = ssh.exec_command(f'ls {remote_folder}')
-        available_remote_games_types = stdout.readlines()
-        available_remote_games_types = [filename.strip() for filename in available_remote_games_types]  # Clean up newline characters
-        available_remote_games_types = sorted(available_remote_games_types)
+        # Use SSH to list directories in the remote games_folder
+        stdin, stdout, stderr = ssh.exec_command(f'ls -p {remote_folder} | grep /')
+        available_remote_game_types = stdout.readlines()
+        available_remote_game_types = [game_type.replace('\n', '')[:-1] for game_type in available_remote_game_types]  # Clean up newline characters and remove trailing slashes
+        available_remote_game_types = sorted(available_remote_game_types)
 
-        for i, game_type in enumerate(available_remote_games_types):
-            game_titles = stdin, stdout, stderr = ssh.exec_command(f'ls {remote_folder}/{game_type}')
-            game_titles = stdout.readlines()
-            game_titles = [filename.strip() for filename in game_titles]  # Clean up newline characters
+        id_counter = 0
+        for game_type in available_remote_game_types:
+            stdin, stdout, stderr = ssh.exec_command(f'ls -p {remote_folder}/{game_type}')
+            result = stdout.readlines()
+            game_titles = []
+            for game_title in result:
+                game_title = game_title.replace('\n', '')
+                if game_title.endswith('/'):
+                    game_titles.append(game_title[:-1])
+
             for game_title in game_titles:
-                file_ext = game_title.split('.')[-1]
-                if file_ext not in known_ext:
-                    continue
-                print(f'- {i}: {game_title} ({game_type})')
-                id_to_game[i] = (game_type, game_title)
-            
-        print(f'\n{len(id_to_game)} remote games found.')
+                stdin, stdout, stderr = ssh.exec_command(f'ls {remote_folder}/{game_type}/{game_title}')
+                game_files = stdout.readlines()
+                game_files = [game_file.strip() for game_file in game_files]
+
+                if any(game_file.split('.')[-1] in known_ext for game_file in game_files):
+                    print(f'- {id_counter}: {game_title} ({game_type})')
+                    id_to_game[id_counter] = (game_type, game_title)
+                    id_counter += 1
+
+        print(f'\n{id_counter} remote games found.')
 
     else:
-        
-        CURRENT_DIR = find_base_dir()
-        games_folder = os.path.join(CURRENT_DIR, '..', 'Games')
-        available_games = sorted(os.listdir(games_folder))
-        for i, game_type in enumerate(available_games):
-            for game_title in os.listdir(os.path.join(games_folder, game_type)):
-                file_ext = game_title.split('.')[-1]
-                if file_ext not in known_ext:
-                    continue
-                print(f'- {i}: {game_title} ({game_type})')
-                id_to_game[i] = (game_type, game_title)
 
-        print(f'\n{len(id_to_game)} local games found.')
+        games_folder = os.path.join(CURRENT_DIR, '..', 'Games')
+        available_game_types = sorted(os.listdir(games_folder))
+
+        id_counter = 0
+        for game_type in available_game_types:
+            game_type_path = os.path.join(games_folder, game_type)
+            if not os.path.isdir(game_type_path):
+                continue
+
+            game_titles = sorted(os.listdir(game_type_path))
+            for game_title in game_titles:
+                game_title_path = os.path.join(game_type_path, game_title)
+                if not os.path.isdir(game_title_path):
+                    continue
+
+                game_files = os.listdir(game_title_path)
+                if any(game_file.split('.')[-1] in known_ext for game_file in game_files):
+                    print(f'- {id_counter}: {game_title} ({game_type})')
+                    id_to_game[id_counter] = (game_type, game_title)
+                    id_counter += 1
+
+        print(f'\n{id_counter} local games found.')
 
     return id_to_game
 

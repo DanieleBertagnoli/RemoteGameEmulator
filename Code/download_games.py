@@ -2,17 +2,41 @@ import os
 import yaml
 import paramiko
 from tqdm import tqdm
-
 from utils import *
+from stat import S_ISDIR
 
 CURRENT_DIR = find_base_dir()
 
 # Load configs
-CONFIGS_PATH = os.path.join(CURRENT_DIR, '..','configs.yml')
+CONFIGS_PATH = os.path.join(CURRENT_DIR, '..', 'configs.yml')
 with open(CONFIGS_PATH, 'r') as f:
     configs = yaml.safe_load(f)
 
 configs = dict(configs)
+
+def download_folder(sftp, remote_folder, local_folder):
+    if not os.path.exists(local_folder):
+        os.makedirs(local_folder)
+        print(f'Created local directory {local_folder}')
+
+    for item in sftp.listdir_attr(remote_folder):
+        remote_item_path = os.path.join(remote_folder, item.filename)
+        local_item_path = os.path.join(local_folder, item.filename)
+
+        if S_ISDIR(item.st_mode):
+            download_folder(sftp, remote_item_path, local_item_path)
+        else:
+            remote_file_size = item.st_size
+            with sftp.file(remote_item_path, 'rb') as remote_file:
+                with open(local_item_path, 'wb') as local_file:
+                    with tqdm(total=remote_file_size, unit='B', unit_scale=True, desc=item.filename) as pbar:
+                        while True:
+                            data = remote_file.read(32768)
+                            if not data:
+                                break
+                            local_file.write(data)
+                            pbar.update(len(data))
+            print(f'--- Downloaded {item.filename} ---')
 
 def download_games() -> None:
     """
@@ -52,17 +76,21 @@ def download_games() -> None:
         else:
             not_valid_choice(game_id)
 
-    game_type, game_file = id_to_game[game_id]
+    game_type, game_name = id_to_game[game_id]
     while True:
-        response = input(f'\nDo you want to download {game_file} from {server_ip}:{server_port}? [Y/n]\n').upper()
+        response = input(f'\nDo you want to download {game_name} from {server_ip}:{server_port}? [Y/n]\n').upper()
 
         if response == 'Y' or response == '':
-            remote_path = os.path.join(configs['games_folder'] + f'/{game_type}' + f'/{game_file}')
-            local_path = os.path.join(games_folder, game_type, game_file)
+            remote_path = os.path.join(configs['games_folder'], game_type, game_name)
+            local_path = os.path.join(games_folder, game_type, game_name)
 
             # Attempt to get the remote file's modification time
-            remote_file_attr = sftp.stat(remote_path)
-            remote_mtime = remote_file_attr.st_mtime
+            try:
+                remote_file_attr = sftp.stat(remote_path)
+                remote_mtime = remote_file_attr.st_mtime
+            except FileNotFoundError:
+                print(f'Error: Remote file {remote_path} not found.')
+                continue
 
             # Check if the local file exists and get its modification time
             local_mtime = 0
@@ -71,36 +99,18 @@ def download_games() -> None:
 
             while True:
                 # Check which file is newer between local and remote ones
-                if remote_mtime > local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_file}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
-                elif remote_mtime < local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_file} and they are more recent than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
+                if remote_mtime < local_mtime and local_mtime > 0:
+                    response = input(f'You already have {game_name}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
+                elif remote_mtime > local_mtime and local_mtime > 0:
+                    response = input(f'You already have {game_name} and they are more recent than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
                 else:
                     response = 'Y'
 
                 if response == 'Y':
-                    if not os.path.exists(os.path.dirname(local_path)):
-                        os.makedirs(os.path.dirname(local_path))
-                        print(f'Created local directory {os.path.dirname(local_path)}')
-
-                    # Use SFTP to download the file with a progress bar
-                    with sftp.file(remote_path, 'rb') as remote_file:
-                        remote_file_size = remote_file_attr.st_size
-                        with open(local_path, 'wb') as local_file:
-                            with tqdm(total=remote_file_size, unit='B', unit_scale=True, desc=os.path.basename(remote_path)) as pbar:
-                                while True:
-                                    data = remote_file.read(32768)
-                                    if not data:
-                                        break
-                                    local_file.write(data)
-                                    pbar.update(len(data))
-
-                    print(f'--- Downloaded {os.path.basename(remote_path)} ---')
+                    download_folder(sftp, remote_path, local_path)
                     break
-
                 elif response == 'N' or response == '':
                     break
-
                 else:
                     not_valid_choice(response)
 

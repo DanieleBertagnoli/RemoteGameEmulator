@@ -6,14 +6,62 @@ from tqdm import tqdm
 from utils import *
 
 CURRENT_DIR = find_base_dir()
+
 # Load configs
-CONFIGS_PATH = os.path.join(CURRENT_DIR, '..','configs.yml')
+CONFIGS_PATH = os.path.join(CURRENT_DIR, '..', 'configs.yml')
 with open(CONFIGS_PATH, 'r') as f:
     configs = yaml.safe_load(f)
 
 configs = dict(configs)
 
+def ensure_remote_dir_exists(sftp, remote_directory):
+    """
+    Ensure that the remote directory exists, create it if it does not.
+    """
+    dirs = remote_directory.split('/')
+    current_dir = ''
+    for dir in dirs:
+        if dir:
+            current_dir = f'{current_dir}/{dir}'
+            try:
+                sftp.stat(current_dir)
+            except FileNotFoundError:
+                sftp.mkdir(current_dir)
+
+def upload_folder(sftp, local_folder, remote_folder):
+    """
+    Upload a local folder to a remote folder via SFTP.
+    """
+    if not os.path.exists(local_folder):
+        print(f'Local folder {local_folder} does not exist.')
+        return
+
+    ensure_remote_dir_exists(sftp, remote_folder)
+    print(f'Created remote directory {remote_folder}')
+
+    for item in os.listdir(local_folder):
+        local_item_path = os.path.join(local_folder, item)
+        remote_item_path = os.path.join(remote_folder, item)
+
+        if os.path.isdir(local_item_path):
+            upload_folder(sftp, local_item_path, remote_item_path)
+        else:
+            with open(local_item_path, 'rb') as local_file:
+                local_file_size = os.path.getsize(local_item_path)
+                with tqdm(total=local_file_size, unit='B', unit_scale=True, desc=item) as pbar:
+                    def callback(bytes_transferred, bytes_total):
+                        pbar.update(bytes_transferred - pbar.n)
+
+                    sftp.put(local_item_path, remote_item_path, callback=callback)
+            print(f'--- Uploaded {local_item_path} to {remote_item_path} ---')
+
 def upload_games() -> None:
+    """
+    Prompts the user to upload game directories to a remote server.
+
+    Returns:
+    None
+    """
 
     # Ensure the Games folder exists locally
     games_folder = os.path.join(CURRENT_DIR, '..', 'Games')
@@ -35,11 +83,10 @@ def upload_games() -> None:
     sftp = ssh.open_sftp()
 
     # Display available games to the user
-    print('\n\nPick the game you want to upload on the server by typing its ID (press enter to quit):')
+    print('\n\nPick the game you want to upload to the server by typing its ID (press enter to quit):')
     id_to_game = list_games(False)
 
     while True:
-
         game_id = input('\n')
         if game_id == '':
             ssh.close()
@@ -50,19 +97,17 @@ def upload_games() -> None:
         else:
             not_valid_choice(game_id)
 
-    game_type, game_file = id_to_game[game_id]
+    game_type, game_name = id_to_game[game_id]
 
     while True:
-
-        response = input(f'\nDo you want to upload {game_file} to {server_ip}:{server_port}? [y/N]\n').upper()
+        response = input(f'\nDo you want to upload {game_name} to {server_ip}:{server_port}? [y/N]\n').upper()
 
         if response == 'Y':
+            remote_path = os.path.join(configs['games_folder'], game_type, game_name)
+            local_path = os.path.join(games_folder, game_type, game_name)
 
-            remote_path = configs['games_folder'] + f'/{game_type}' + f'/{game_file}'
-            local_path = os.path.join(games_folder, game_type, game_file)
-
+            # Attempt to get the remote file's modification time
             try:
-                # Attempt to get the remote file's modification time
                 remote_file_attr = sftp.stat(remote_path)
                 remote_mtime = remote_file_attr.st_mtime
             except FileNotFoundError:
@@ -75,31 +120,15 @@ def upload_games() -> None:
 
             while True:
                 # Check which file is newer between local and remote ones
-                if remote_mtime < local_mtime and local_mtime > 0 and remote_mtime > 0:
-                    response = input(f'Your {game_file} files are more recent than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
-                elif remote_mtime > local_mtime and local_mtime > 0 and remote_mtime > 0:
-                    response = input(f'Your {game_file} files are outdated with respect to the remote ones. Do you want to overwrite the remote files? [y/N]: ').upper()
+                if remote_mtime > local_mtime and local_mtime > 0 and remote_mtime > 0:
+                    response = input(f'Your {game_name} files are more recent than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
+                elif remote_mtime < local_mtime and local_mtime > 0 and remote_mtime > 0:
+                    response = input(f'Your {game_name} files are outdated with respect to the remote ones. Do you want to overwrite the remote files? [y/N]: ').upper()
                 else:
                     response = 'Y'
 
                 if response == 'Y':
-                    # First, check if the remote directory exists, if not, create it
-                    try:
-                        sftp.stat(os.path.dirname(remote_path))
-                    except FileNotFoundError:
-                        sftp.mkdir(os.path.dirname(remote_path))
-                        print(f'Created remote directory {os.path.dirname(remote_path)}')
-
-                    # Use SFTP to upload the file with a progress bar
-                    with open(local_path, 'rb') as local_file:
-                        local_file_size = os.path.getsize(local_path)
-                        with tqdm(total=local_file_size, unit='B', unit_scale=True, desc=os.path.basename(local_path)) as pbar:
-                            def callback(bytes_transferred, bytes_total):
-                                pbar.update(bytes_transferred - pbar.n)
-
-                            sftp.put(local_path, remote_path, callback=callback)
-
-                    print(f'--- Uploaded {os.path.basename(local_path)} to {remote_path} ---')
+                    upload_folder(sftp, local_path, remote_path)
                     break
 
                 elif response == 'N' or response == '':
