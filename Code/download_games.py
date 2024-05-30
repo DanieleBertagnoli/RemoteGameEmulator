@@ -76,7 +76,7 @@ def download_games() -> None:
         else:
             not_valid_choice(game_id)
 
-    game_type, game_name = id_to_game[game_id]
+    game_type, game_name, _ = id_to_game[game_id]
     while True:
         response = input(f'\nDo you want to download {game_name} from {server_ip}:{server_port}? [Y/n]\n').upper()
 
@@ -87,7 +87,7 @@ def download_games() -> None:
             # Attempt to get the remote file's modification time
             try:
                 remote_file_attr = sftp.stat(remote_path)
-                remote_mtime = remote_file_attr.st_mtime
+                remote_mtime = float(remote_file_attr.st_mtime)
             except FileNotFoundError:
                 print(f'Error: Remote file {remote_path} not found.')
                 continue
@@ -95,13 +95,13 @@ def download_games() -> None:
             # Check if the local file exists and get its modification time
             local_mtime = 0
             if os.path.exists(local_path):
-                local_mtime = os.path.getmtime(local_path)
+                local_mtime = float(os.path.getmtime(local_path))
 
             while True:
                 # Check which file is newer between local and remote ones
-                if remote_mtime < local_mtime and local_mtime > 0:
+                if remote_mtime > local_mtime and local_mtime > 0:
                     response = input(f'You already have {game_name}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
-                elif remote_mtime > local_mtime and local_mtime > 0:
+                elif remote_mtime < local_mtime and local_mtime > 0:
                     response = input(f'You already have {game_name} and they are more recent than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
                 else:
                     response = 'Y'

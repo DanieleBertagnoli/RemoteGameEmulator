@@ -84,7 +84,7 @@ def play() -> None:
             print(f'\n\n {selected_game[1]} selected for {selected_game[0]} emulator! Let\'s play!\n\n')
 
             # Construct the path to the selected game file
-            selected_game = os.path.join(games_folder, selected_game[0], selected_game[1])
+            selected_game = os.path.join(games_folder, selected_game[0], selected_game[1], selected_game[2])
             break
         else:
             not_valid_choice(response)

@@ -42,9 +42,10 @@ def list_games(remote=False, ssh=None, remote_folder=None):
                 game_files = stdout.readlines()
                 game_files = [game_file.strip() for game_file in game_files]
 
-                if any(game_file.split('.')[-1] in known_ext for game_file in game_files):
+                game_file_name = next((game_file for game_file in game_files if game_file.split('.')[-1] in known_ext), None)
+                if game_file_name:
                     print(f'- {id_counter}: {game_title} ({game_type})')
-                    id_to_game[id_counter] = (game_type, game_title)
+                    id_to_game[id_counter] = (game_type, game_title, game_file_name)
                     id_counter += 1
 
         print(f'\n{id_counter} remote games found.')
@@ -67,9 +68,10 @@ def list_games(remote=False, ssh=None, remote_folder=None):
                     continue
 
                 game_files = os.listdir(game_title_path)
-                if any(game_file.split('.')[-1] in known_ext for game_file in game_files):
+                game_file_name = next((game_file for game_file in game_files if game_file.split('.')[-1] in known_ext), None)
+                if game_file_name:
                     print(f'- {id_counter}: {game_title} ({game_type})')
-                    id_to_game[id_counter] = (game_type, game_title)
+                    id_to_game[id_counter] = (game_type, game_title, game_file_name)
                     id_counter += 1
 
         print(f'\n{id_counter} local games found.')
@@ -77,7 +79,7 @@ def list_games(remote=False, ssh=None, remote_folder=None):
     return id_to_game
 
 def not_valid_choice(choice:str) -> None:
-    print(f'\n!!! {choice} is not a valide choice, try again !!!\n')    
+    print(f'\n!!! {choice} is not a valid choice, try again !!!\n')    
 
 
 def find_base_dir():
