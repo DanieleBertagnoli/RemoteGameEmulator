@@ -84,25 +84,26 @@ def download_games() -> None:
             remote_path = os.path.join(configs['games_folder'], game_type, game_name)
             local_path = os.path.join(games_folder, game_type, game_name)
 
-            # Attempt to get the remote file's modification time
+            # Attempt to get the remote file's access time
             try:
                 remote_file_attr = sftp.stat(remote_path)
-                remote_mtime = float(remote_file_attr.st_mtime)
+                remote_atime = float(remote_file_attr.st_atime)
             except FileNotFoundError:
                 print(f'Error: Remote file {remote_path} not found.')
                 continue
 
-            # Check if the local file exists and get its modification time
-            local_mtime = 0
+            # Check if the local file exists and get its access time
+            local_atime = 0
             if os.path.exists(local_path):
-                local_mtime = float(os.path.getmtime(local_path))
+                local_atime = float(os.path.getatime(local_path))
 
             while True:
-                # Check which file is newer between local and remote ones
-                if remote_mtime > local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_name}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
-                elif remote_mtime < local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_name} and they are more recent than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
+                print(remote_atime, local_atime)
+                # Check which file is more recently accessed between local and remote ones
+                if remote_atime > local_atime and local_atime > 0:
+                    response = input(f'You already have {game_name}, it seems that your files have been accessed less recently. Do you want to overwrite your local files? [y/N]\n').upper()
+                elif remote_atime <= local_atime and local_atime > 0:
+                    response = input(f'You already have {game_name} and they have been accessed more recently than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
                 else:
                     response = 'Y'
 
@@ -123,5 +124,3 @@ def download_games() -> None:
             not_valid_choice(response)
 
     ssh.close()
-
-    download_games()

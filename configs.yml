@@ -5,7 +5,7 @@ game_file_extensions:
 - iso
 games_folder: /home/pi/Documents/RemoteGames
 server_configs:
-  server_ip:
-  server_password: 
+  server_ip: 
+  server_password:
   server_port: 
   server_username: 
