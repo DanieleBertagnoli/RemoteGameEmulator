@@ -98,7 +98,6 @@ def download_games() -> None:
                 local_atime = float(os.path.getatime(local_path))
 
             while True:
-                print(remote_atime, local_atime)
                 # Check which file is more recently accessed between local and remote ones
                 if remote_atime > local_atime and local_atime > 0:
                     response = input(f'You already have {game_name}, it seems that your files have been accessed less recently. Do you want to overwrite your local files? [y/N]\n').upper()

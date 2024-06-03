@@ -119,7 +119,6 @@ def upload_games() -> None:
                 local_atime = float(os.path.getatime(local_path))
 
             while True:
-                print(remote_atime, local_atime)
                 # Check which file is more recently accessed between local and remote ones
                 if remote_atime <= local_atime and local_atime > 0 and remote_atime > 0:
                     response = input(f'Your {game_name} files have been accessed more recently than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
