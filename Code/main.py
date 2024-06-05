@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import time
 
 import yaml
 
@@ -92,6 +93,15 @@ def play() -> None:
     # Launch the selected game using the appropriate emulator
     subprocess.run([emulator, selected_game])
     
+    # Update the game file access time
+
+    # Get the current mtime
+    local_mtime = float(os.path.getmtime(selected_game))
+    # Update the atime to the current time (or any other desired time)
+    new_atime = time.time()
+    # Update the atime while keeping the mtime unchanged
+    os.utime(selected_game, (new_atime, local_mtime))
+
     # Upload the game data after playing
     upload_games()
 
