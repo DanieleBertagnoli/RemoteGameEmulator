@@ -97,32 +97,32 @@ def upload_games() -> None:
         else:
             not_valid_choice(game_id)
 
-    game_type, game_name, _ = id_to_game[game_id]
+    game_type, game_name, file_name = id_to_game[game_id]
 
     while True:
         response = input(f'\nDo you want to upload {game_name} to {server_ip}:{server_port}? [y/N]\n').upper()
 
         if response == 'Y':
-            remote_path = os.path.join(configs['games_folder'], game_type, game_name)
-            local_path = os.path.join(games_folder, game_type, game_name)
+            remote_path = os.path.join(configs['games_folder'], game_type, game_name, file_name)
+            local_path = os.path.join(games_folder, game_type, game_name, file_name)
 
             # Attempt to get the remote file's access time
             try:
                 remote_file_attr = sftp.stat(remote_path)
-                remote_atime = float(remote_file_attr.st_atime)
+                remote_mtime = float(remote_file_attr.st_mtime)
             except FileNotFoundError:
-                remote_atime = 0
+                remote_mtime = 0
 
             # Check if the local file exists and get its access time
-            local_atime = 0
+            local_mtime = 0
             if os.path.exists(local_path):
-                local_atime = float(os.path.getatime(local_path))
+                local_mtime = float(os.path.getmtime(local_path))
 
             while True:
                 # Check which file is more recently accessed between local and remote ones
-                if remote_atime <= local_atime and local_atime > 0 and remote_atime > 0:
+                if remote_mtime <= local_mtime and local_mtime > 0 and remote_mtime > 0:
                     response = input(f'Your {game_name} files have been accessed more recently than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
-                elif remote_atime > local_atime and local_atime > 0 and remote_atime > 0:
+                elif remote_mtime > local_mtime and local_mtime > 0 and remote_mtime > 0:
                     response = input(f'Your {game_name} files have been accessed less recently than the remote ones. Do you want to overwrite the remote files? [y/N]: ').upper()
                 else:
                     response = 'Y'

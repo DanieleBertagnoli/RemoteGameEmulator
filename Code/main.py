@@ -95,12 +95,17 @@ def play() -> None:
     
     # Update the game file access time
 
-    # Get the current mtime
-    local_mtime = float(os.path.getmtime(selected_game))
-    # Update the atime to the current time (or any other desired time)
-    new_atime = time.time()
+    # Get the new mtime
+    new_mtime = time.time()
+    # Get current atime
+    old_atime = float(os.path.getatime(selected_game))
     # Update the atime while keeping the mtime unchanged
-    os.utime(selected_game, (new_atime, local_mtime))
+
+    print(f'OLD {float(os.path.getmtime(selected_game))}')
+
+    os.utime(selected_game, (old_atime, new_mtime))
+
+    print(f'NEW {float(os.path.getmtime(selected_game))}')
 
     # Upload the game data after playing
     upload_games()
