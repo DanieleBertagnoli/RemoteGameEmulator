@@ -41,7 +41,7 @@ def upload_folder(sftp, local_folder, remote_folder):
 
     for item in os.listdir(local_folder):
         local_item_path = os.path.join(local_folder, item)
-        remote_item_path = os.path.join(remote_folder, item)
+        remote_item_path = remote_folder + '/' + item
 
         if os.path.isdir(local_item_path):
             upload_folder(sftp, local_item_path, remote_item_path)
