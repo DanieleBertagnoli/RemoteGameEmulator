@@ -19,7 +19,6 @@ def download_folder(sftp, remote_folder, local_folder):
         os.makedirs(local_folder)
         print(f'Created local directory {local_folder}')
 
-    print(local_folder, remote_folder)
     for item in sftp.listdir_attr(remote_folder):
         remote_item_path = os.path.join(remote_folder, item.filename)
         local_item_path = os.path.join(local_folder, item.filename)
