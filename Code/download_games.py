@@ -100,14 +100,14 @@ def download_games() -> None:
             while True:
                 # Check which file is more recently accessed between local and remote ones
                 if remote_mtime > local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_name}, it seems that your files have been accessed less recently. Do you want to overwrite your local files? [y/N]\n').upper()
+                    response = input(f'You already have {game_name}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
                 elif remote_mtime <= local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_name} and they have been accessed more recently than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
+                    response = input(f'You already have {game_name} and they are more updated than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
                 else:
                     response = 'Y'
 
                 if response == 'Y':
-                    remote_path = os.path.join(configs['games_folder'], game_type, game_name)
+                    remote_path = configs['games_folder'] + '/' + game_type + '/' + game_name
                     local_path = os.path.join(games_folder, game_type, game_name)
                     download_folder(sftp, remote_path, local_path)
                     break

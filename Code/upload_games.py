@@ -121,14 +121,14 @@ def upload_games() -> None:
             while True:
                 # Check which file is more recently accessed between local and remote ones
                 if remote_mtime <= local_mtime and local_mtime > 0 and remote_mtime > 0:
-                    response = input(f'Your {game_name} files have been accessed more recently than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
+                    response = input(f'Your {game_name} files are more updated than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
                 elif remote_mtime > local_mtime and local_mtime > 0 and remote_mtime > 0:
-                    response = input(f'Your {game_name} files have been accessed less recently than the remote ones. Do you want to overwrite the remote files? [y/N]: ').upper()
+                    response = input(f'Your {game_name} files are outdated. Do you want to overwrite the remote files? [y/N]: ').upper()
                 else:
                     response = 'Y'
 
                 if response == 'Y':
-                    remote_path = os.path.join(configs['games_folder'], game_type, game_name)
+                    remote_path = configs['games_folder'] + '/' + game_type + '/' + game_name
                     local_path = os.path.join(games_folder, game_type, game_name)
                     upload_folder(sftp, local_path, remote_path)
                     break
