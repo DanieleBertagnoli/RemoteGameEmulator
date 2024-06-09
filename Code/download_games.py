@@ -20,7 +20,7 @@ def download_folder(sftp, remote_folder, local_folder):
         print(f'Created local directory {local_folder}')
 
     for item in sftp.listdir_attr(remote_folder):
-        remote_item_path = os.path.join(remote_folder, item.filename)
+        remote_item_path = remote_folder + '/' + item.filename
         local_item_path = os.path.join(local_folder, item.filename)
 
         if S_ISDIR(item.st_mode):
@@ -81,7 +81,7 @@ def download_games() -> None:
         response = input(f'\nDo you want to download {game_name} from {server_ip}:{server_port}? [Y/n]\n').upper()
 
         if response == 'Y' or response == '':
-            remote_path = os.path.join(configs['games_folder'], game_type, game_name, file_name)
+            remote_path = configs['games_folder'] + '/' + game_type + '/' + game_name + '/' + file_name
             local_path = os.path.join(games_folder, game_type, game_name, file_name)
 
             # Attempt to get the remote file's access time
