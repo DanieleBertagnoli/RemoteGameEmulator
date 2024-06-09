@@ -19,6 +19,7 @@ def download_folder(sftp, remote_folder, local_folder):
         os.makedirs(local_folder)
         print(f'Created local directory {local_folder}')
 
+    print(local_folder, remote_folder)
     for item in sftp.listdir_attr(remote_folder):
         remote_item_path = os.path.join(remote_folder, item.filename)
         local_item_path = os.path.join(local_folder, item.filename)
@@ -107,6 +108,8 @@ def download_games() -> None:
                     response = 'Y'
 
                 if response == 'Y':
+                    remote_path = os.path.join(configs['games_folder'], game_type, game_name)
+                    local_path = os.path.join(games_folder, game_type, game_name)
                     download_folder(sftp, remote_path, local_path)
                     break
                 elif response == 'N' or response == '':

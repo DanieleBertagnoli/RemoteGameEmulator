@@ -128,6 +128,8 @@ def upload_games() -> None:
                     response = 'Y'
 
                 if response == 'Y':
+                    remote_path = os.path.join(configs['games_folder'], game_type, game_name)
+                    local_path = os.path.join(games_folder, game_type, game_name)
                     upload_folder(sftp, local_path, remote_path)
                     break
 
