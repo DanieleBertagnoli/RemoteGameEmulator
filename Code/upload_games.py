@@ -103,7 +103,7 @@ def upload_games() -> None:
         response = input(f'\nDo you want to upload {game_name} to {server_ip}:{server_port}? [y/N]\n').upper()
 
         if response == 'Y':
-            remote_path = os.path.join(configs['games_folder'], game_type, game_name, file_name)
+            remote_path = configs['games_folder'] + '/' +  game_type + '/' +  game_name + '/' +  file_name
             local_path = os.path.join(games_folder, game_type, game_name, file_name)
 
             # Attempt to get the remote file's access time
