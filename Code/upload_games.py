@@ -37,7 +37,7 @@ def upload_folder(sftp, local_folder, remote_folder):
         return
 
     ensure_remote_dir_exists(sftp, remote_folder)
-    print(f'Created remote directory {remote_folder}')
+    print(f'\nCreated remote directory {remote_folder}')
 
     for item in os.listdir(local_folder):
         local_item_path = os.path.join(local_folder, item)
@@ -53,7 +53,7 @@ def upload_folder(sftp, local_folder, remote_folder):
                         pbar.update(bytes_transferred - pbar.n)
 
                     sftp.put(local_item_path, remote_item_path, callback=callback)
-            print(f'--- Uploaded {local_item_path} to {remote_item_path} ---')
+            print(f'\n--- Uploaded {local_item_path} to {remote_item_path} ---')
 
 def upload_games() -> None:
     """
@@ -100,7 +100,7 @@ def upload_games() -> None:
     game_type, game_name, file_name = id_to_game[game_id]
 
     while True:
-        response = input(f'\nDo you want to upload {game_name} to {server_ip}:{server_port}? [y/N]\n').upper()
+        response = input(f'\nDo you want to upload {game_name} to {server_ip}:{server_port}? [y/N]\n\n').upper()
 
         if response == 'Y':
             remote_path = configs['games_folder'] + '/' +  game_type + '/' +  game_name + '/' +  file_name
@@ -121,9 +121,9 @@ def upload_games() -> None:
             while True:
                 # Check which file is more recently accessed between local and remote ones
                 if remote_mtime <= local_mtime and local_mtime > 0 and remote_mtime > 0:
-                    response = input(f'Your {game_name} files are more updated than the server\'s one. Do you want to overwrite the remote files? [y/N]: ').upper()
+                    response = input(f'\nYour {game_name} files are more updated than the server\'s one. Do you want to overwrite the remote files? [y/N]: \n\n').upper()
                 elif remote_mtime > local_mtime and local_mtime > 0 and remote_mtime > 0:
-                    response = input(f'Your {game_name} files are outdated. Do you want to overwrite the remote files? [y/N]: ').upper()
+                    response = input(f'\nYour {game_name} files are outdated. Do you want to overwrite the remote files? [y/N]: \n\n').upper()
                 else:
                     response = 'Y'
 

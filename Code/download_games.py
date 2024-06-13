@@ -17,7 +17,7 @@ configs = dict(configs)
 def download_folder(sftp, remote_folder, local_folder):
     if not os.path.exists(local_folder):
         os.makedirs(local_folder)
-        print(f'Created local directory {local_folder}')
+        print(f'\nCreated local directory {local_folder}')
 
     for item in sftp.listdir_attr(remote_folder):
         remote_item_path = remote_folder + '/' + item.filename
@@ -36,7 +36,7 @@ def download_folder(sftp, remote_folder, local_folder):
                                 break
                             local_file.write(data)
                             pbar.update(len(data))
-            print(f'--- Downloaded {item.filename} ---')
+            print(f'\n--- Downloaded {item.filename} ---')
 
 def download_games() -> None:
     """
@@ -78,7 +78,7 @@ def download_games() -> None:
 
     game_type, game_name, file_name = id_to_game[game_id]
     while True:
-        response = input(f'\nDo you want to download {game_name} from {server_ip}:{server_port}? [Y/n]\n').upper()
+        response = input(f'\nDo you want to download {game_name} from {server_ip}:{server_port}? [Y/n]\n\n').upper()
 
         if response == 'Y' or response == '':
             remote_path = configs['games_folder'] + '/' + game_type + '/' + game_name + '/' + file_name
@@ -100,9 +100,9 @@ def download_games() -> None:
             while True:
                 # Check which file is more recently accessed between local and remote ones
                 if remote_mtime > local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_name}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n').upper()
+                    response = input(f'\nYou already have {game_name}, it seems that your files are outdated. Do you want to overwrite your local files? [y/N]\n\n').upper()
                 elif remote_mtime <= local_mtime and local_mtime > 0:
-                    response = input(f'You already have {game_name} and they are more updated than the server\'s one. Do you want to overwrite your local files? [y/N]\n').upper()
+                    response = input(f'\nYou already have {game_name} and they are more updated than the server\'s one. Do you want to overwrite your local files? [y/N]\n\n').upper()
                 else:
                     response = 'Y'
 

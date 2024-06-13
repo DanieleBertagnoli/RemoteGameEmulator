@@ -101,11 +101,7 @@ def play() -> None:
     old_atime = float(os.path.getatime(selected_game))
     # Update the atime while keeping the mtime unchanged
 
-    print(f'OLD {float(os.path.getmtime(selected_game))}')
-
     os.utime(selected_game, (old_atime, new_mtime))
-
-    print(f'NEW {float(os.path.getmtime(selected_game))}')
 
     # Upload the game data after playing
     upload_games()
